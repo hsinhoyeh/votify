@@ -28,6 +28,7 @@ class SpotifyApi:
     WIDEVINE_LICENSE_API_URL = (
         "https://gue1-spclient.spotify.com/widevine-license/v1/{type}/license"
     )
+    PLAYER_ACCESS_TOKEN_URL = "https://open.spotify.com/get_access_token?reason=init&productType=web-player&totp=nycL1h_FwY7eCLdXWNuAxf1QgYR-_8afmUKofNbhntRro3kGHgNoJIzTl7aVXhEPvFKQ4XmcG6Vo3D2kjbEhMw&totpVer=3"
     SEEK_TABLE_API_URL = "https://seektables.scdn.co/seektable/{file_id}.json"
     TRACK_CREDITS_API_URL = "https://spclient.wg.spotify.com/track-credits-view/v0/experimental/{track_id}/credits"
     STREAM_URLS_API_URL = (
@@ -76,12 +77,7 @@ class SpotifyApi:
 
     def _set_session_auth(self):
         home_page = self.get_home_page()
-        self.session_info = json.loads(
-            re.search(
-                r'<script id="session" data-testid="session" type="application/json">(.+?)</script>',
-                home_page,
-            ).group(1)
-        )
+        self.session_info = self.get_player_access_token()
         self.config_info = json.loads(
             re.search(
                 r'<script id="config" data-testid="config" type="application/json">(.+?)</script>',
@@ -109,6 +105,14 @@ class SpotifyApi:
         )
         check_response(response)
         return response.text
+
+    def get_player_access_token(self):
+        # NOTE(hsiny): this would be expired at 1741820708970
+        response = self.session.get(
+            SpotifyApi.PLAYER_ACCESS_TOKEN_URL,
+        )
+        check_response(response)
+        return response.json()
 
     @staticmethod
     def media_id_to_gid(media_id: str) -> str:
